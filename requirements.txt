@@ -1,4 +1,4 @@
 fastapi
 uvicorn
-openai
-websockets
+google-generativeai
+pydantic
