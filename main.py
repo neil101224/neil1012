@@ -1,6 +1,7 @@
 import os
 import io
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel
 from openai import OpenAI
 
 app = FastAPI()
@@ -8,9 +9,29 @@ app = FastAPI()
 # Cloud environment se secret API key read karega
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+# Text-based request schema
+class PromptRequest(BaseModel):
+    message: str
+
 @app.get("/")
 def home():
     return {"status": "AI Assistant Backend Online"}
+
+# Naya HTTP POST endpoint text prompts ke liye
+@app.post("/chat")
+def chat_endpoint(req: PromptRequest):
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a witty, concise voice assistant like Alexa. Keep answers under 2 sentences."},
+                {"role": "user", "content": req.message}
+            ]
+        )
+        ai_reply = response.choices[0].message.content
+        return {"status": "success", "reply": ai_reply}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 @app.websocket("/ws/audio")
 async def audio_stream(websocket: WebSocket):
